@@ -30,13 +30,18 @@ public class CoyoteSkill
         var result = await kernel.InvokePromptAsync($"""
             I am going to analyze the C# project at '{projectPath}' for concurrency issues using Coyote.
             In order to this, I need you to do the following:
-            1. Read each C# file in the project to find methods that use concurrency features like async/await. Your objective is to write tests that exercise the concurrency behaviors of these methods.
-            2. Once you have identified the usage of concurrency, create a new C# test project. This new project should include the Xunit framework, and reference the appropriate C# projects under test. Add the necessary test methods in a single .cs file, each method having attribute [Test].
-            3. Clearly inform the user where the new test project is created, and where the test methods are defined.
-            4. Compile the test project in Debug mode.
-            5. Rewrite the compiled binaries of the test project to include Coyote instrumentation. This will allow Coyote to analyze the concurrency behaviors of the methods.
-            6. Run the Coyote tool on the rewritten dll corresponding to the test .cs file, targeting each test method that you identified in step 1. Capture the output of the Coyote analysis.
-            7. Summarize the results of the Coyote analysis, indicating whether any concurrency issues were found, and if so, provide details about the issues.
+            - Check if the project under test targets .NET 6.0 or older. If it targets a newer .NET version, inform the user that Coyote does not support it and exit.
+            - Read each C# file in the project to find methods that use concurrency features like async/await. Your objective is to write tests that exercise the concurrency behaviors of these methods.
+            - Create a new C# xUnit project for testing (using the command dotnet new xunit -n TestProjectName). Create the project in the same directory as the project under test, but ensure that the name of the test project is distinct from the project under test. Inform the user about the location and name of the new project.
+            - Add the following references to the test project:
+                - The project under test.
+                - The Microsoft.Coyote NuGet package.
+                - The FluentAssertions NuGet package.
+            - In the new test project, create a new C# file containing the concurrency tests for the methods you identified in step 2. Each test should be defined as a public method with the [Microsoft.Coyote.SystematicTesting.Test] attribute. This is available via the Microsoft.Coyote package.
+            - Compile the test project in Debug mode.
+            - Rewrite the compiled binaries of the test project to include Coyote instrumentation. This will allow Coyote to analyze the concurrency behaviors of the methods. The test C# file, along with dlls pertaining to the prject under test, should be rewritten to include Coyote instrumentation.
+            - Run the Coyote tool on the rewritten dll corresponding to the test .cs file, targeting each test method that you identified in step 1. Capture the output of the Coyote analysis.
+            - Summarize the results of the Coyote analysis, indicating whether any concurrency issues were found, and if so, provide details about the issues.
             """);
 
         // Return the plan back to the agent
@@ -50,55 +55,6 @@ public class CoyoteSkill
     {
         // Naive implementation: find methods with [Test] or similar attributes that use async/await or Task
         return Directory.GetFiles(projectPath, "*.cs", SearchOption.AllDirectories).ToList();
-    }
-
-    [KernelFunction]
-    [Description("Return the contents of the file from the provided path.")]
-    public string ReadFileContents(
-        [Description("The path to the file to read.")] string filePath)
-    {
-        if (!File.Exists(filePath))
-            return $"File not found: {filePath}";
-
-        return File.ReadAllText(filePath);
-    }
-
-    [KernelFunction]
-    [Description("Writes the provided content to the specified file path.")]
-    public string WriteFileContents(
-        [Description("The path to the file to write.")] string filePath,
-        [Description("The content to write to the file.")] string content)
-    {
-        try
-        {
-            File.WriteAllText(filePath, content);
-            return $"Successfully wrote to {filePath}";
-        }
-        catch (Exception ex)
-        {
-            return $"Error writing to file {filePath}: {ex.Message}";
-        }
-    }
-
-    [KernelFunction]
-    [Description("Compiles the C# project at the specified path in Debug mode and outputs the binaries to the bin directory.")]
-    private async Task<string> CompileDebugBinaries(
-        [Description("The C# project (.csproj) to compile")] string projectPath,
-        [Description("The path to output the compiled binaries. Should be completely distinct from where other binaries of the project are emitted")] string binariesPath)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = $"build {projectPath} -c Debug -o {binariesPath}",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        var process = Process.Start(psi);
-        string output = await process.StandardOutput.ReadToEndAsync();
-        string error = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return string.IsNullOrWhiteSpace(error) ? output : $"{output}\nErrors:\n{error}";
     }
 
     [KernelFunction]
