@@ -3,6 +3,8 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
+using FormalMethodsAgent;
+
 
 var builder = Kernel.CreateBuilder();
 
@@ -13,6 +15,8 @@ builder.AddAzureOpenAIChatCompletion(
 );
 
 builder.Plugins.AddFromType<CoyoteSkill>();
+builder.Plugins.AddFromType<DiskIOSkill>();
+builder.Plugins.AddFromType<DotnetSkill>();
 
 var kernel = builder.Build();
 
