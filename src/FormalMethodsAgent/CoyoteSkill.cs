@@ -96,7 +96,7 @@ namespace FormalMethodsAgent
             var psi = new ProcessStartInfo
             {
                 FileName = "coyote",
-                Arguments = $"test {dllUnderTest} --method:{methodName}",
+                Arguments = $"test {dllUnderTest} --method:{methodName} -i:10000",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false

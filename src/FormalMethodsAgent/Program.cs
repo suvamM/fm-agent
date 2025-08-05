@@ -9,7 +9,7 @@ using FormalMethodsAgent;
 var builder = Kernel.CreateBuilder();
 
 builder.AddAzureOpenAIChatCompletion(
-    deploymentName: "gpt-4.1-mini",        
+    deploymentName: "gpt-4o",        
     endpoint: Environment.GetEnvironmentVariable("model-endpoint"),
     apiKey: Environment.GetEnvironmentVariable("model-key")
 );
