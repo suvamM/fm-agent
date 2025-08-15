@@ -37,5 +37,14 @@ namespace FormalMethodsAgent
                 return $"Error writing to file {filePath}: {ex.Message}";
             }
         }
+
+        [KernelFunction]
+        [Description("Returns a list containing the paths of every C# file in the provided project path.")]
+        private List<string> ListCSharpFiles(
+            [Description("The project whose C# files needs to be enumerated")] string projectPath)
+        {
+            // Naive implementation: find methods with [Test] or similar attributes that use async/await or Task
+            return Directory.GetFiles(projectPath, "*.cs", SearchOption.AllDirectories).ToList();
+        }
     }
 }
